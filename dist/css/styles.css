@@ -164,6 +164,7 @@ main:focus { outline: none; }
 .journey-mark { color: #ffffff26; font-size: 4rem; line-height: 1; font-family: Georgia, serif; }
 .site-footer { border-top: 1px solid var(--border); background: #08090b; }
 .footer-top { display: flex; align-items: center; justify-content: space-between; padding-block: var(--space-7); gap: var(--space-6); }
+.footer-top .brand--image { width: 220px; max-width: 100%; }
 .footer-top > p { font-size: var(--text-sm); }
 .footer-top nav { display: flex; gap: var(--space-6); font-size: var(--text-sm); color: var(--text-secondary); }
 .footer-bottom { display: flex; gap: var(--space-5); flex-wrap: wrap; border-top: 1px solid var(--border); padding-block: var(--space-5); font-size: .65rem; color: var(--muted); }
