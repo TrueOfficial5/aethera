@@ -1,0 +1,10 @@
+{
+  "name": "aethera-realm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node serve.mjs",
+    "check": "node --check dist/js/app.js && node --check dist/js/pages.js && node --check dist/js/components.js && node --check dist/js/data.js && node --check dist/js/config.js"
+  }
+}
