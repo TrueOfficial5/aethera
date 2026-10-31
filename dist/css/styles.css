@@ -88,7 +88,9 @@ main:focus { outline: none; }
 .button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .site-header { position: absolute; top: var(--header-offset); left: 0; right: 0; z-index: 20; background: var(--nav-glass); border-bottom: 1px solid var(--border); box-shadow: var(--nav-shadow); backdrop-filter: blur(18px) saturate(.5); }
 .header-inner { width: min(var(--container), calc(100% - var(--space-9))); height: var(--header-height); display: flex; align-items: center; gap: var(--space-6); }
-.header-brand { display: none; }
+.header-brand { display: flex; align-items: center; flex-shrink: 0; }
+.brand--image { width: 160px; min-height: 44px; justify-content: center; }
+.brand--image img { width: 100%; height: auto; max-height: 56px; object-fit: contain; }
 .header-actions { display: flex; align-items: center; gap: var(--space-6); }
 .header-actions .button { min-height: 44px; padding-inline: 0; color: var(--accent); font-size: var(--text-sm); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .brand { display: inline-flex; gap: var(--space-3); align-items: center; font-family: var(--font-heading); font-size: 1.35rem; letter-spacing: .16em; font-weight: 700; color: var(--text); text-transform: uppercase; line-height: 1.25; flex-shrink: 0; }
@@ -228,7 +230,9 @@ tbody tr:hover { background: var(--surface); }
 @media (min-width: 1600px) { .hero { min-height: 760px; } }
 @media (max-width: 1100px) {
   .header-inner { gap: var(--space-5); }
-  .header-inner nav { gap: var(--space-5); }
+  .header-brand .brand--image { width: 120px; }
+  .header-actions .account-link { display: none; }
+  .header-inner nav { gap: var(--space-4); }
   .realm-strip-inner { flex-wrap: wrap; justify-content: flex-start; column-gap: var(--space-7); padding-block: var(--space-5); }
   .realm-strip .text-link { margin-left: auto; }
   .realm-identity .badge { display: none; }
@@ -239,7 +243,7 @@ tbody tr:hover { background: var(--surface); }
 @media (max-width: 800px) {
   .container { width: calc(100% - var(--space-7)); }
   :root { --header-height: 68px; }
-  .header-brand { display: block; }
+  .header-brand .brand--image { width: 145px; }
   .header-actions .account-link { display: none; }
   .brand { font-size: 1.2rem; }
   .brand-symbol { font-size: 2.7rem; }

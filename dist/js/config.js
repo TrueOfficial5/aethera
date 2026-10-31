@@ -1,5 +1,6 @@
 export const config = Object.freeze({
   name: 'Aethera',
+  logo: './images/AETHERA-logga.png',
   realm: 'Everfall',
   expansion: 'Wrath of the Lich King',
   version: '3.3.5a',
