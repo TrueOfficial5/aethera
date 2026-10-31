@@ -9,15 +9,43 @@ document.querySelector('.skip-link').addEventListener('click', event => {
 });
 let rankingCategory = 'players';
 let routeVersion = 0;
+let pageAnimation;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) pageAnimation?.cancel(); });
 async function render(scroll = true) {
   const version = ++routeVersion;
+  pageAnimation?.cancel();
   const [page = '', id] = location.hash.replace(/^#\/?/, '').split('/');
   const routes = { '': home, news: () => id ? articlePage(id) : newsPage(), server: serverPage, play: playPage, rankings: () => rankingsPage(rankingCategory), account: accountPage, rules: rulesPage };
   const content = await (routes[page] || notFound)();
   if (version !== routeVersion) return;
+  const motion = getComputedStyle(document.documentElement);
+  const previousMain = document.querySelector('#main');
+  if (scroll && previousMain && !reducedMotion.matches) {
+    pageAnimation = previousMain.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: parseFloat(motion.getPropertyValue('--page-exit-duration')),
+      easing: 'ease-out',
+      fill: 'forwards',
+    });
+    await pageAnimation.finished.catch(() => {});
+    if (version !== routeVersion) return;
+  }
   app.innerHTML = `${header(page)}<main id="main" tabindex="-1">${content}</main>${footer()}`;
   document.title = `${page ? page.charAt(0).toUpperCase() + page.slice(1) : 'The Frozen Throne awaits'} — ${config.name}`;
-  if (scroll) { window.scrollTo(0, 0); document.querySelector('#main').focus({ preventScroll: true }); }
+  if (scroll) {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const main = document.querySelector('#main');
+    main.focus({ preventScroll: true });
+    if (!reducedMotion.matches) {
+      pageAnimation = main.animate([
+        { opacity: 0, transform: `translateY(${motion.getPropertyValue('--page-enter-distance').trim()})` },
+        { opacity: 1, transform: 'translateY(0)' },
+      ], {
+        duration: parseFloat(motion.getPropertyValue('--page-enter-duration')),
+        easing: motion.getPropertyValue('--page-easing').trim(),
+      });
+    }
+  }
 }
 app.addEventListener('click', async event => {
   const menu = event.target.closest('.menu-toggle');

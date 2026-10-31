@@ -50,6 +50,10 @@
   --glass-blur: 22px;
   --glass-saturation: .2;
   --transition: 180ms ease;
+  --page-exit-duration: 80ms;
+  --page-enter-duration: 220ms;
+  --page-enter-distance: 8px;
+  --page-easing: cubic-bezier(.22, 1, .36, 1);
   --heading-spacing: -.04em;
 }
 * { box-sizing: border-box; }
