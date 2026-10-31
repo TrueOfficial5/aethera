@@ -19,7 +19,7 @@ Run `npm run dev` from this directory and open http://127.0.0.1:4173. Run `npm r
 
 Replace the data service methods with real API requests when available. Authentication is a clearly labeled interface preview and does not persist or transmit credentials. Downloads, connection addresses, and launch dates remain unannounced. Rankings and news are demonstration content. No live server is connected.
 
-Fantasy artwork is generated with the built-in image generation tool and stored locally in `dist/assets`. Fonts are loaded from Google Fonts and require an internet connection.
+The main character artwork is supplied by the project owner and stored in `dist/images/Aetheras-character.png`. Supporting fantasy artwork is generated with the built-in image generation tool and stored locally in `dist/assets`. Fonts are loaded from Google Fonts and require an internet connection.
 
 ## Art direction
 
