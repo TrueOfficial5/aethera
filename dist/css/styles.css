@@ -43,6 +43,7 @@
   --logo-width: 280px;
   --logo-overhang: 34px;
   --logo-curve: 26px;
+  --logo-glow: radial-gradient(ellipse, #eff3ff40 0%, #d4dbe61a 40%, transparent 72%);
   --header-offset: 0px;
   --hero-image-top: var(--header-height);
   --nav-glass: linear-gradient(100deg, #090c1040, #ffffff05 55%, #090c1040);
@@ -91,7 +92,9 @@ main:focus { outline: none; }
 .site-header::before { content: ''; position: absolute; inset: 0 0 calc(-1 * var(--logo-overhang)); z-index: -1; background: var(--nav-glass); backdrop-filter: blur(18px) saturate(.5); clip-path: shape(from 0 0, line to 100% 0, line to 100% var(--header-height), line to calc(50% + var(--logo-width) / 2 + var(--logo-curve)) var(--header-height), curve to calc(50% + var(--logo-width) / 2 - var(--logo-curve)) 100% with calc(50% + var(--logo-width) / 2) var(--header-height) / calc(50% + var(--logo-width) / 2) 100%, line to calc(50% - var(--logo-width) / 2 + var(--logo-curve)) 100%, curve to calc(50% - var(--logo-width) / 2 - var(--logo-curve)) var(--header-height) with calc(50% - var(--logo-width) / 2) 100% / calc(50% - var(--logo-width) / 2) var(--header-height), line to 0 var(--header-height), close); }
 .header-inner { width: min(var(--container), calc(100% - var(--space-9))); height: var(--header-height); display: flex; align-items: center; gap: var(--space-6); }
 .header-brand { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: var(--logo-width); height: calc(var(--header-height) + var(--logo-overhang)); display: flex; align-items: center; justify-content: center; padding: var(--space-2) var(--space-4); z-index: 2; }
-.brand--image { width: 100%; min-height: 44px; justify-content: center; }
+.brand--image { position: relative; isolation: isolate; width: 100%; min-height: 44px; justify-content: center; }
+.brand--image::before { content: ''; position: absolute; inset: -12px -18px; z-index: -1; pointer-events: none; background: var(--logo-glow); filter: blur(12px); opacity: 0; transition: opacity var(--transition); }
+.brand--image:hover::before, .brand--image:focus-visible::before { opacity: 1; }
 .brand--image img { width: 100%; height: auto; max-height: calc(var(--header-height) + var(--logo-overhang) - var(--space-4)); object-fit: contain; }
 .header-actions { display: flex; align-items: center; gap: var(--space-6); }
 .header-actions .button { min-height: 44px; padding-inline: 0; color: var(--accent); font-size: var(--text-sm); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
