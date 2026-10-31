@@ -45,7 +45,6 @@
   --header-offset: 0px;
   --hero-image-top: var(--header-height);
   --nav-glass: linear-gradient(100deg, #090c1040, #ffffff05 55%, #090c1040);
-  --nav-shadow: inset 0 -1px 0 #ffffff04, 0 4px 24px #0002;
   --glass-blur: 22px;
   --glass-saturation: .2;
   --transition: 180ms ease;
@@ -87,9 +86,10 @@ main:focus { outline: none; }
 .button--ghost { color: var(--text); background: transparent; border-color: transparent; box-shadow: none; }
 .button--danger { color: var(--background); background: var(--danger); }
 .button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-.site-header { position: absolute; top: var(--header-offset); left: 0; right: 0; z-index: 20; background: var(--nav-glass); border-bottom: 1px solid var(--border); box-shadow: var(--nav-shadow); backdrop-filter: blur(18px) saturate(.5); }
+.site-header { position: absolute; top: var(--header-offset); left: 0; right: 0; z-index: 20; isolation: isolate; }
+.site-header::before { content: ''; position: absolute; inset: 0 0 calc(-1 * var(--logo-overhang)); z-index: -1; background: var(--nav-glass); backdrop-filter: blur(18px) saturate(.5); clip-path: polygon(0 0, 100% 0, 100% var(--header-height), calc(50% + var(--logo-width) / 2) var(--header-height), calc(50% + var(--logo-width) / 2) 100%, calc(50% - var(--logo-width) / 2) 100%, calc(50% - var(--logo-width) / 2) var(--header-height), 0 var(--header-height)); }
 .header-inner { width: min(var(--container), calc(100% - var(--space-9))); height: var(--header-height); display: flex; align-items: center; gap: var(--space-6); }
-.header-brand { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: var(--logo-width); height: calc(var(--header-height) + var(--logo-overhang)); display: flex; align-items: center; justify-content: center; padding: var(--space-2) var(--space-4); background: #101113e8; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 var(--radius) var(--radius); box-shadow: 0 10px 24px #0003; backdrop-filter: blur(var(--glass-blur)); z-index: 2; }
+.header-brand { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: var(--logo-width); height: calc(var(--header-height) + var(--logo-overhang)); display: flex; align-items: center; justify-content: center; padding: var(--space-2) var(--space-4); z-index: 2; }
 .brand--image { width: 100%; min-height: 44px; justify-content: center; }
 .brand--image img { width: 100%; height: auto; max-height: calc(var(--header-height) + var(--logo-overhang) - var(--space-4)); object-fit: contain; }
 .header-actions { display: flex; align-items: center; gap: var(--space-6); }
