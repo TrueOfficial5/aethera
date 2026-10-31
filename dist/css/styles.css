@@ -43,7 +43,7 @@
   --logo-width: 280px;
   --logo-overhang: 34px;
   --logo-curve: 26px;
-  --logo-glow: radial-gradient(ellipse, #eff3ff40 0%, #d4dbe61a 40%, transparent 72%);
+  --logo-glow: drop-shadow(0 1px 1px #000c) drop-shadow(0 0 1px #e8edf566) drop-shadow(0 0 5px #d5dfed33);
   --header-offset: 0px;
   --hero-image-top: var(--header-height);
   --nav-glass: linear-gradient(100deg, #090c1040, #ffffff05 55%, #090c1040);
@@ -93,9 +93,8 @@ main:focus { outline: none; }
 .header-inner { width: min(var(--container), calc(100% - var(--space-9))); height: var(--header-height); display: flex; align-items: center; gap: var(--space-6); }
 .header-brand { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: var(--logo-width); height: calc(var(--header-height) + var(--logo-overhang)); display: flex; align-items: center; justify-content: center; padding: var(--space-2) var(--space-4); z-index: 2; }
 .brand--image { position: relative; isolation: isolate; width: 100%; min-height: 44px; justify-content: center; }
-.brand--image::before { content: ''; position: absolute; inset: -12px -18px; z-index: -1; pointer-events: none; background: var(--logo-glow); filter: blur(12px); opacity: 0; transition: opacity var(--transition); }
-.brand--image:hover::before, .brand--image:focus-visible::before { opacity: 1; }
-.brand--image img { width: 100%; height: auto; max-height: calc(var(--header-height) + var(--logo-overhang) - var(--space-4)); object-fit: contain; }
+.brand--image img { width: 100%; height: auto; max-height: calc(var(--header-height) + var(--logo-overhang) - var(--space-4)); object-fit: contain; filter: drop-shadow(0 1px 1px #000c); transition: filter var(--transition); }
+.brand--image:hover img, .brand--image:focus-visible img { filter: var(--logo-glow); }
 .header-actions { display: flex; align-items: center; gap: var(--space-6); }
 .header-actions .button { min-height: 44px; padding-inline: 0; color: var(--accent); font-size: var(--text-sm); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .brand { display: inline-flex; gap: var(--space-3); align-items: center; font-family: var(--font-heading); font-size: 1.35rem; letter-spacing: .16em; font-weight: 700; color: var(--text); text-transform: uppercase; line-height: 1.25; flex-shrink: 0; }
