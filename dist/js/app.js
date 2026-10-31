@@ -16,7 +16,7 @@ async function render(scroll = true) {
   const content = await (routes[page] || notFound)();
   if (version !== routeVersion) return;
   app.innerHTML = `${header(page)}<main id="main" tabindex="-1">${content}</main>${footer()}`;
-  document.title = `${page ? page.charAt(0).toUpperCase() + page.slice(1) : 'A new chapter awaits'} — ${config.name}`;
+  document.title = `${page ? page.charAt(0).toUpperCase() + page.slice(1) : 'The Frozen Throne awaits'} — ${config.name}`;
   if (scroll) { window.scrollTo(0, 0); document.querySelector('#main').focus({ preventScroll: true }); }
 }
 app.addEventListener('click', async event => {

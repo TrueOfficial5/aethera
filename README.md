@@ -19,4 +19,14 @@ Run `npm run dev` from this directory and open http://127.0.0.1:4173. Run `npm r
 
 Replace the data service methods with real API requests when available. Authentication is a clearly labeled interface preview and does not persist or transmit credentials. Downloads, connection addresses, and launch dates remain unannounced. Rankings and news are demonstration content. No live server is connected.
 
-Landscape photography is loaded from Unsplash. Fonts are loaded from Google Fonts. These assets require an internet connection. Replace with locally hosted licensed assets before production if desired.
+Fantasy artwork is generated with the built-in image generation tool and stored locally in `dist/assets`. Fonts are loaded from Google Fonts and require an internet connection.
+
+## Art direction
+
+The redesign uses Wrath-era dark fantasy, icy cyan illumination, gold metal borders, crimson calls to action, and Cinzel headings. The shared CSS tokens control this identity across all pages.
+
+Generated artwork briefs:
+
+- `dist/assets/frozen-throne.png`: widescreen painterly MMORPG key art, armored death knight and glowing runeblade on the right, gothic frozen fortress, dark snowy battlefield on the left for headline placement, navy and cyan with subtle embers, no text or logos.
+- `dist/assets/frost-dragon.png`: undead frost dragon flying above an icy gothic citadel in a snowstorm, painterly game key art with navy and cyan lighting, no text or logos.
+- `dist/assets/factions.png`: green orc warrior in red-accented armor facing a human paladin in gold and blue armor across a snowy mountain pass, painterly heroic game art, no text or logos.
