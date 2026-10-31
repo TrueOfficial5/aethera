@@ -23,7 +23,7 @@ Fantasy artwork is generated with the built-in image generation tool and stored 
 
 ## Art direction
 
-The redesign uses Wrath-era dark fantasy, icy cyan illumination, gold metal borders, crimson calls to action, and Cinzel headings. The shared CSS tokens control this identity across all pages.
+The interface uses charcoal and silver glass surfaces, translucent layers, soft blur, fine borders, and restrained ice-blue accents. Manrope headings and Inter body text keep the interface clean. The Wrath-era fantasy illustrations remain unchanged. Shared CSS tokens control the identity, glass blur, surface opacity, borders, and buttons across all pages.
 
 Generated artwork briefs:
 
