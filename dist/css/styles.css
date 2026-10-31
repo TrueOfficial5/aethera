@@ -90,17 +90,17 @@ main:focus { outline: none; }
 .button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .site-header { position: absolute; top: var(--header-offset); left: 0; right: 0; z-index: 20; isolation: isolate; }
 .site-header::before { content: ''; position: absolute; inset: 0 0 calc(-1 * var(--logo-overhang)); z-index: -1; background: var(--nav-glass); backdrop-filter: blur(18px) saturate(.5); clip-path: shape(from 0 0, line to 100% 0, line to 100% var(--header-height), line to calc(50% + var(--logo-width) / 2 + var(--logo-curve)) var(--header-height), curve to calc(50% + var(--logo-width) / 2 - var(--logo-curve)) 100% with calc(50% + var(--logo-width) / 2) var(--header-height) / calc(50% + var(--logo-width) / 2) 100%, line to calc(50% - var(--logo-width) / 2 + var(--logo-curve)) 100%, curve to calc(50% - var(--logo-width) / 2 - var(--logo-curve)) var(--header-height) with calc(50% - var(--logo-width) / 2) 100% / calc(50% - var(--logo-width) / 2) var(--header-height), line to 0 var(--header-height), close); }
-.header-inner { width: min(var(--container), calc(100% - var(--space-9))); height: var(--header-height); display: flex; align-items: center; gap: var(--space-6); }
+.header-inner { width: min(var(--container), calc(100% - var(--space-9))); height: var(--header-height); display: grid; grid-template-columns: minmax(0, 1fr) var(--logo-width) minmax(0, 1fr); align-items: center; column-gap: var(--space-6); }
 .header-brand { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: var(--logo-width); height: calc(var(--header-height) + var(--logo-overhang)); display: flex; align-items: center; justify-content: center; padding: var(--space-2) var(--space-4); z-index: 2; }
 .brand--image { position: relative; isolation: isolate; width: 100%; min-height: 44px; justify-content: center; }
 .brand--image img { width: 100%; height: auto; max-height: calc(var(--header-height) + var(--logo-overhang) - var(--space-4)); object-fit: contain; filter: drop-shadow(0 1px 1px #000c); transition: filter var(--transition); }
 .brand--image:hover img, .brand--image:focus-visible img { filter: var(--logo-glow); }
-.header-actions { display: flex; align-items: center; gap: var(--space-6); }
+.header-actions { grid-column: 3; justify-self: start; display: flex; align-items: center; gap: var(--space-6); }
 .header-actions .button { min-height: 44px; padding-inline: 0; color: var(--accent); font-size: var(--text-sm); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .brand { display: inline-flex; gap: var(--space-3); align-items: center; font-family: var(--font-heading); font-size: 1.35rem; letter-spacing: .16em; font-weight: 700; color: var(--text); text-transform: uppercase; line-height: 1.25; flex-shrink: 0; }
 .brand small { display: block; font-family: var(--font-body); font-size: .46rem; letter-spacing: .27em; color: var(--muted); margin-top: var(--space-1); }
 .brand-symbol { color: var(--text); font-family: Georgia, serif; font-size: 2.4rem; line-height: 1; font-weight: 400; }
-.header-inner nav { display: flex; align-items: center; gap: var(--space-6); margin-right: auto; height: 100%; }
+.header-inner nav { grid-column: 1; justify-self: end; display: flex; align-items: center; gap: var(--space-6); height: 100%; }
 .header-inner nav a { position: relative; font-family: var(--font-body); font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); height: 100%; display: flex; align-items: center; transition: color var(--transition); }
 .header-inner nav a:hover, .header-inner nav a[aria-current] { color: var(--text); }
 .header-inner nav a[aria-current]::after { content: ''; position: absolute; height: 2px; bottom: 15px; left: 35%; right: 35%; background: var(--accent); border-radius: var(--radius); }
@@ -234,6 +234,7 @@ tbody tr:hover { background: var(--surface); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (min-width: 1600px) { .hero { min-height: 760px; } }
 @media (max-width: 1280px) {
+  .header-inner { display: flex; }
   :root { --logo-width: 230px; --logo-overhang: 28px; }
   .header-actions { order: -1; }
   .header-actions .account-link { display: none; }
