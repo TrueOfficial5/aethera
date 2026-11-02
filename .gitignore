@@ -1,0 +1,11 @@
+.data/
+.env
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+
+.env.*
+!.env.example
+node_modules/
+*.log

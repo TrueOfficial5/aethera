@@ -1,5 +1,6 @@
 export const config = Object.freeze({
   name: 'Aethera',
+  backgroundVideo: './videos/aethera-background.mp4',
   logo: './images/AETHERA-logga.png',
   realm: 'Everfall',
   expansion: 'Wrath of the Lich King',

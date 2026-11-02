@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node serve.mjs",
-    "check": "node --check dist/js/app.js && node --check dist/js/pages.js && node --check dist/js/components.js && node --check dist/js/data.js && node --check dist/js/config.js"
+    "check": "node --check dist/js/app.js && node --check dist/js/pages.js && node --check dist/js/components.js && node --check dist/js/data.js && node --check dist/js/config.js",
+    "dev:test": "node scripts/development.mjs",
+    "account:create": "node scripts/accounts.mjs",
+    "test": "node --test tests/*.test.mjs"
   }
 }
