@@ -1,7 +1,7 @@
 import { managementPage, managementClick, managementSubmit, profilePage, restoreEditorPosition } from './management.js';
 import { authService } from './auth-service.js';
 import { config } from './config.js';
-import { observeReveals, setupNavigationGlow } from './motion.js';
+import { setupScrollEffects, setupNavigationGlow } from './motion.js';
 import { setupSections } from './sections.js';
 import { header, footer, table } from './components.js';
 import { dataService } from './data.js';
@@ -50,8 +50,8 @@ async function render(scroll = true) {
     main.focus({ preventScroll: true });
     if (!reducedMotion.matches) {
       pageAnimation = main.animate([
-        { opacity: 0, transform: `translateY(${motion.getPropertyValue('--page-enter-distance').trim()})` },
-        { opacity: 1, transform: 'translateY(0)' },
+        { opacity: 0 },
+        { opacity: 1 },
       ], {
         duration: parseFloat(motion.getPropertyValue('--page-enter-duration')),
         easing: motion.getPropertyValue('--page-easing').trim(),
@@ -59,7 +59,7 @@ async function render(scroll = true) {
     }
   }
   setupNavigationGlow();
-  observeReveals(document.querySelector('#main'));
+  setupScrollEffects(document.querySelector('#main'));
   updateHeader();
   setupSections(document.querySelector('#main'));
   restoreEditorPosition();
@@ -101,9 +101,9 @@ app.addEventListener('click', async event => {
   const scrollLink = event.target.closest('[data-scroll]');
   if (scrollLink) { event.preventDefault(); document.getElementById(scrollLink.dataset.scroll)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); }
   const ranking = event.target.closest('[data-ranking]');
-  if (ranking) { rankingCategory = ranking.dataset.ranking; document.querySelector('#main').innerHTML = await rankingsPage(rankingCategory); document.querySelector(`[data-ranking="${rankingCategory}"]`).focus(); observeReveals(document.querySelector('#main')); }
+  if (ranking) { rankingCategory = ranking.dataset.ranking; document.querySelector('#main').innerHTML = await rankingsPage(rankingCategory); document.querySelector(`[data-ranking="${rankingCategory}"]`).focus(); setupScrollEffects(document.querySelector('#main')); }
   const account = event.target.closest('[data-account]');
-  if (account) { document.querySelector('#main').innerHTML = accountPage(account.dataset.account); document.querySelector(`[data-account="${account.dataset.account}"]`).focus(); observeReveals(document.querySelector('#main')); }
+  if (account) { document.querySelector('#main').innerHTML = accountPage(account.dataset.account); document.querySelector(`[data-account="${account.dataset.account}"]`).focus(); setupScrollEffects(document.querySelector('#main')); }
 });
 app.addEventListener('change', event => {
   if (event.target.id !== 'article-status') return;
