@@ -48,3 +48,11 @@ Scheduled publication: choose Planned and a future date/time in the editor. The 
 Realm information: administrators can edit the realm name, expansion, client version, experience text, maximum level, and status at /#/admin/realm. Values persist in the SQLite metadata table and are shared by the homepage, server information, and client-version guidance. This changes website content only, not the game server configuration. Updates require the current version to avoid overwriting concurrent edits.
 
 Mobile review: public pages and administrator views were checked in browser viewports at 320/390px, 768px tablet, 844×390 landscape, and 1440px desktop. Mobile navigation includes account access; wide tables retain internal scrolling with a swipe hint. Forms use readable 16px controls, section arrows avoid covering tall sections, and touch devices retain native scrolling. Physical iOS/Android touch and keyboard behavior still require device testing. Future UI changes must include responsive checks under AGENTS.md.
+
+## Shareable browser demo
+
+The `demo` branch is intended for Netlify demonstrations. Build with `npm run build:demo` and publish `demo-dist`. The full application on `main` continues to run locally with the real Node API and SQLite store. Demo builds never include `.data`, credentials, or sessions.
+
+The static demo simulates player/admin roles without passwords and stores mock edits in localStorage in each visitor's browser. A persistent banner identifies demo mode and provides Reset demo. News CRUD, categories, realm editing, and planned-publication checks are simulated; no game or authentication backend is connected. Changes are not shared between visitors, and planned publication is checked when the demo reads its data. Run `npm run test:demo` to verify the adapter.
+
+To update the demo after future development, merge `main` into `demo` while retaining its Netlify configuration. Do not replace the full local application with generated demo output.

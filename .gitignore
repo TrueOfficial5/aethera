@@ -9,3 +9,5 @@
 !.env.example
 node_modules/
 *.log
+
+demo-dist/
