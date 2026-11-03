@@ -1,3 +1,6 @@
+import { config } from './config.js';
+import { playProgress } from './data.js';
+
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const activeAnimations = new Set();
 let cleanupScrollEffects;
@@ -7,6 +10,132 @@ let backgroundVisible = false;
 let navigationObserver;
 let cleanupNavigationGlow;
 let logoEffectsBlockedUntil = 0;
+let downloadScene;
+let cleanupStepScroll;
+const downloadFraming = new WeakMap();
+
+function advancePlayStep(root) {
+  cleanupStepScroll?.();
+  const next = root.querySelector('[data-play-step="3"]');
+  if (!next?.getBoundingClientRect) return;
+  const controller = new AbortController();
+  const tokens = getComputedStyle(document.documentElement);
+  const delay = reducedMotion.matches ? 0 : parseFloat(tokens.getPropertyValue('--step-complete-duration')) || 900;
+  const duration = parseFloat(tokens.getPropertyValue('--step-scroll-duration')) || 1600;
+  let frame;
+  const timer = setTimeout(() => {
+    if (!root.isConnected || controller.signal.aborted) return;
+    const highlight = () => {
+      next.classList.add('is-next');
+    };
+    const start = window.scrollY;
+    const offset = parseFloat(getComputedStyle(next).translate.split(' ')[1]) || 0;
+    const header = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const target = Math.max(0, Math.min(document.documentElement.scrollHeight - innerHeight, next.getBoundingClientRect().top - offset + start - header));
+    if (reducedMotion.matches) { window.scrollTo({ top: target, behavior: 'instant' }); highlight(); return; }
+    let started;
+    const move = now => {
+      if (controller.signal.aborted || !root.isConnected) return;
+      started ??= now;
+      const progress = Math.min(1, (now - started) / duration);
+      const eased = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+      window.scrollTo({ top: start + (target - start) * eased, behavior: 'instant' });
+      if (progress < 1) frame = requestAnimationFrame(move);
+      else highlight();
+    };
+    frame = requestAnimationFrame(move);
+  }, delay);
+  const stop = () => { controller.abort(); clearTimeout(timer); cancelAnimationFrame(frame); };
+  for (const name of ['wheel', 'touchstart', 'pointerdown', 'keydown']) window.addEventListener(name, stop, { passive: true, signal: controller.signal });
+  cleanupStepScroll = stop;
+}
+
+export async function playDownloadScene(root, button) {
+  const video = root.querySelector('.download-video');
+  if (!video || button.disabled || button.closest('.is-locked')) return;
+  const status = root.querySelector('[data-download-status]');
+  const completeStep = () => {
+    const card = button.closest('[data-play-step]');
+    if (!card) return;
+    playProgress.completeDownloadPreview(card.dataset.progressOwner);
+    card.classList.add('is-complete');
+    card.querySelector('[data-step-complete]').hidden = false;
+    const next = root.querySelector('[data-play-step="3"]');
+    if (next?.classList) {
+      next.classList.remove('is-locked');
+      const content = next.querySelector('.step-content');
+      content.inert = false;
+      content.removeAttribute('aria-hidden');
+      next.querySelector('.step-number').removeAttribute('aria-hidden');
+      next.querySelector('.step-lock')?.remove();
+    }
+    advancePlayStep(root);
+  };
+  if (reducedMotion.matches) {
+    completeStep();
+    status.textContent = 'Your journey begins now · Animation skipped for reduced motion. Client download is not available yet.';
+    return;
+  }
+  downloadScene?.controller.abort();
+  const controller = new AbortController();
+  const heading = root.querySelector('.page-heading');
+  const layer = video.parentElement;
+  downloadFraming.get(video)?.cancel();
+  const framing = video.animate(config.downloadFraming, { duration: 1000, easing: 'linear', fill: 'both' });
+  framing.pause();
+  framing.currentTime = 0;
+  downloadFraming.set(video, framing);
+  let videoFrame;
+  const updateFraming = (time = video.currentTime) => {
+    const progress = Number.isFinite(video.duration) && video.duration > 0 ? time / video.duration : 0;
+    framing.currentTime = Math.max(0, Math.min(1, progress)) * 1000;
+  };
+  const followFrame = (now, metadata) => {
+    if (controller.signal.aborted) return;
+    updateFraming(metadata.mediaTime);
+    videoFrame = video.requestVideoFrameCallback(followFrame);
+  };
+  video.addEventListener('timeupdate', () => updateFraming(), { signal: controller.signal });
+  video.addEventListener('seeked', () => updateFraming(), { signal: controller.signal });
+  const scene = { video, controller, finished: false, finish: null };
+  downloadScene = scene;
+  button.disabled = true;
+  status.textContent = 'Preparing the scene…';
+  const finish = (failed = false, completed = false) => {
+    if (controller.signal.aborted) return;
+    scene.finished = true;
+    controller.abort();
+    layer.classList.remove('is-download-playing');
+    layer.classList.remove('is-download-active');
+    downloadScene = null;
+    button.disabled = false;
+    if (completed) completeStep();
+    status.textContent = failed ? 'The scene could not play. Please try again.' : 'Your journey begins now · Client download is not available yet.';
+    updateBackgroundVideo();
+  };
+  scene.finish = finish;
+  heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  video.addEventListener('playing', () => {
+    if (videoFrame == null && video.requestVideoFrameCallback) videoFrame = video.requestVideoFrameCallback(followFrame);
+    layer.classList.add('is-download-active');
+    layer.classList.add('is-download-playing');
+    backgroundVideo?.pause();
+    status.textContent = 'Your journey begins now · Playing the scene.';
+  }, { signal: controller.signal });
+  video.addEventListener('ended', () => finish(false, true), { signal: controller.signal });
+  video.addEventListener('error', () => finish(true), { signal: controller.signal });
+  controller.signal.addEventListener('abort', () => {
+    video.pause();
+    if (videoFrame != null) video.cancelVideoFrameCallback(videoFrame);
+    if (!root.isConnected) framing.cancel();
+  }, { once: true });
+  try {
+    video.muted = true;
+    if (!video.getAttribute('src')) video.src = video.dataset.src;
+    video.currentTime = 0;
+    await video.play();
+  } catch { finish(true); }
+}
 
 export function setupNavigationGlow() {
   cleanupNavigationGlow?.();
@@ -125,6 +254,13 @@ export function setupNavigationGlow() {
 }
 
 function updateBackgroundVideo() {
+  if (downloadScene) {
+    backgroundVideo?.pause();
+    if (reducedMotion.matches) downloadScene.finish();
+    else if (document.hidden) downloadScene.video.pause();
+    else if (!downloadScene.finished) downloadScene.video.play().catch(() => downloadScene.finish());
+    return;
+  }
   const video = backgroundVideo;
   if (!video) return;
   if (reducedMotion.matches || document.hidden || !backgroundVisible) {
@@ -141,6 +277,10 @@ document.addEventListener('visibilitychange', updateBackgroundVideo);
 reducedMotion.addEventListener('change', updateBackgroundVideo);
 
 export function setupBackgroundVideo(root) {
+  cleanupStepScroll?.();
+  cleanupStepScroll = null;
+  downloadScene?.controller.abort();
+  downloadScene = null;
   backgroundObserver?.disconnect();
   backgroundVideo?.pause();
   backgroundVideo = root.querySelector('.background-video');

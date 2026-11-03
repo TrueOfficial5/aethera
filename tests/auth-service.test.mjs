@@ -16,6 +16,6 @@ test('A failed initial connection can recover without locking the sign-in form',
     globalThis.fetch = async () => Response.json(recovered);
     await authService.signIn({ username: 'Adventurer', password: 'example-password' });
     assert.equal(authService.state.account.username, 'Adventurer');
-    assert.match(accountPage(), /<h2>Adventurer<\/h2>/);
+    assert.match(accountPage(), /<h1>Adventurer<\/h1>/);
   } finally { globalThis.fetch = original; }
 });

@@ -39,6 +39,11 @@ export function createApplication({ store, provider = new UnconfiguredAuthProvid
           requireValue(account.role === 'admin', 'Administrator permission is required.', 403);
         }
         if (path === '/api/auth/session' && method === 'GET') return json({ account, authentication: auth.status() });
+        if (path === '/api/profile/avatar' && method === 'PUT') {
+          requireValue(account, 'Sign in to continue.', 401);
+          const input = await body(request);
+          return json({ account: store.updateAvatar(account.id, input.avatarId, input.avatarUrl) });
+        }
         if (['/api/auth/login', '/api/auth/register'].includes(path) && method === 'POST') {
           rateLimit(client);
           const result = await auth.login(await body(request), path.endsWith('/register'));

@@ -1,5 +1,6 @@
 import { articleInput, realmInput, pageOptions, text } from './demo-validation.js';
 import { fixture } from './demo-fixture.js';
+import { avatars, customPortraitUrl } from './avatars.js';
 
 const key = 'aethera-browser-demo-v1';
 const authentication = { available: true, mode: 'demo', message: 'Simulated demo accounts. No real authentication or game connection.' };
@@ -33,8 +34,21 @@ export async function demoRequest(path, method = 'GET', body = {}) {
   if (route === 'auth/login') {
     const role = body.role === 'admin' ? 'admin' : 'user';
     state.account = { id: `demo-${role}`, username: role === 'admin' ? 'DemoAdmin' : 'DemoAdventurer', email: `${role}@example.invalid`, role, provider: 'browser-demo', createdAt: fixture.createdAt };
+    state.account.avatarId = state.avatars?.[state.account.id] || null;
+    state.account.avatarUrl = state.avatarUrls?.[state.account.id] || null;
     result = { account: state.account, authentication };
   } else if (route === 'auth/logout') { state.account = null; result = { success: true }; }
+  else if (route === 'profile/avatar' && method === 'PUT') {
+    requireDemo(state.account, 'Choose a simulated account first.');
+    requireDemo(avatars.some(avatar => avatar.id === body.avatarId), 'Choose one of the available portraits.');
+    const avatarUrl = body.avatarId === 'custom' ? customPortraitUrl(body.avatarUrl) : null;
+    requireDemo(body.avatarId !== 'custom' || avatarUrl, 'Enter a direct HTTPS image URL without credentials.');
+    state.account.avatarId = body.avatarId;
+    state.account.avatarUrl = avatarUrl;
+    state.avatars = { ...state.avatars, [state.account.id]: body.avatarId };
+    state.avatarUrls = { ...state.avatarUrls, [state.account.id]: avatarUrl };
+    result = { account: state.account };
+  }
   else if (route === 'realm') return { realm: state.realm };
   else if (route === 'admin/realm' && method === 'PUT') {
     requireDemo(body.version === state.realm.version, 'Realm information changed. Reload before saving.');

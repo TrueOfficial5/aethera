@@ -1,6 +1,87 @@
 import { authService } from './auth-service.js';
 import { api, newsService } from './news-service.js';
-import { escapeHtml as e, pageHeader, button, notice, dateLabel, dataTable } from './components.js';
+import { escapeHtml as e, pageHeader, button, notice, dateLabel, dataTable, backgroundMedia } from './components.js';
+import { avatars, portraitSize, customPortraitUrl } from './avatars.js';
+
+const profilePortrait = account => {
+  const avatar = avatars.find(item => item.id === account.avatarId);
+  const image = avatar?.id === 'custom' ? customPortraitUrl(account.avatarUrl) : avatar?.image;
+  return image ? `<img src="${e(image)}" alt="${e(avatar.name)} portrait" width="104" height="104" referrerpolicy="no-referrer">` : e(account.username.charAt(0).toUpperCase());
+};
+
+function chooseAvatar() {
+  const account = authService.state.account;
+  if (!account) return;
+  const previous = document.activeElement;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'confirmation-dialog panel avatar-dialog';
+  dialog.setAttribute('aria-labelledby', 'avatar-title');
+  dialog.innerHTML = `<p class="eyebrow">YOUR PORTRAIT</p><h2 id="avatar-title">Choose your character.</h2><p>A community portrait, independent of your game characters.</p><form><fieldset class="avatar-options"><legend class="sr-only">Available portraits</legend>${avatars.map(avatar => `<label class="avatar-option"><input type="radio" name="avatarId" value="${avatar.id}" ${account.avatarId === avatar.id ? 'checked' : ''} required>${avatar.image ? `<img src="${avatar.image}" alt="" width="160" height="160">` : '<span class="avatar-custom-tile" aria-hidden="true">＋</span>'}<span>${avatar.name}</span></label>`).join('')}</fieldset><div class="avatar-custom-fields" ${account.avatarId === 'custom' ? '' : 'hidden'}><label for="custom-avatar-url">Image URL</label><input id="custom-avatar-url" name="avatarUrl" type="url" maxlength="2000" placeholder="https://example.com/portrait.png" value="${e(account.avatarUrl || '')}" aria-describedby="avatar-size-help" ${account.avatarId === 'custom' ? 'required' : 'disabled'}><p id="avatar-size-help" class="content-note">At least ${portraitSize.minimum} × ${portraitSize.minimum} pixels. Recommended: ${portraitSize.recommended} × ${portraitSize.recommended} pixels, square. Other shapes are cropped to a circle. Use a direct HTTPS image link.</p><img class="avatar-custom-preview" alt="Custom portrait preview" width="104" height="104" referrerpolicy="no-referrer" hidden><p class="avatar-preview-status" role="status"></p></div><p class="avatar-error" role="alert"></p>${actions('<button class="button button--primary" type="submit">Save portrait</button><button class="button button--outline" type="button" data-avatar-cancel>Cancel</button>')}</form>`;
+  const customFields = dialog.querySelector('.avatar-custom-fields');
+  const customInput = dialog.querySelector('[name="avatarUrl"]');
+  const preview = dialog.querySelector('.avatar-custom-preview');
+  const previewStatus = dialog.querySelector('.avatar-preview-status');
+  let previewSequence = 0;
+  const previewCustom = async () => {
+    const sequence = ++previewSequence;
+    const url = customPortraitUrl(customInput.value);
+    preview.hidden = true;
+    previewStatus.textContent = 'Loading preview…';
+    try {
+      if (!url) throw new Error('Enter a direct HTTPS image URL without credentials.');
+      const image = new Image();
+      image.referrerPolicy = 'no-referrer';
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('The image took too long to load. Check the URL and try again.')), 10000);
+        image.onload = () => { clearTimeout(timer); resolve(); };
+        image.onerror = () => { clearTimeout(timer); reject(new Error('Could not load this image. Use a direct, publicly accessible image link.')); };
+        image.src = url;
+      });
+      if (image.naturalWidth < portraitSize.minimum || image.naturalHeight < portraitSize.minimum) throw new Error(`The image must be at least ${portraitSize.minimum} × ${portraitSize.minimum} pixels.`);
+      if (sequence === previewSequence && dialog.open) {
+        preview.src = url;
+        preview.hidden = false;
+        previewStatus.textContent = `${image.naturalWidth} × ${image.naturalHeight} pixels · Ready to save`;
+      }
+      return url;
+    } catch (error) {
+      if (sequence === previewSequence) previewStatus.textContent = error.message;
+      throw error;
+    }
+  };
+  customInput.addEventListener('change', () => { previewCustom().catch(() => {}); });
+  dialog.querySelectorAll('[name="avatarId"]').forEach(input => input.addEventListener('change', () => {
+    const custom = input.value === 'custom';
+    customFields.hidden = !custom;
+    customInput.disabled = !custom;
+    customInput.required = custom;
+    dialog.querySelector('.avatar-error').textContent = '';
+    if (custom) {
+      customInput.focus();
+      if (customInput.value) previewCustom().catch(() => {});
+    } else { previewSequence++; preview.hidden = true; }
+  }));
+  document.body.append(dialog);
+  dialog.querySelector('[data-avatar-cancel]').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => { dialog.remove(); previous?.focus({ preventScroll: true }); }, { once: true });
+  dialog.querySelector('form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const submit = dialog.querySelector('[type="submit"]');
+    submit.disabled = true;
+    dialog.querySelector('.avatar-error').textContent = '';
+    try {
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      if (values.avatarId === 'custom') values.avatarUrl = await previewCustom();
+      const result = await api('profile/avatar', 'PUT', values);
+      Object.assign(authService.state.account, { avatarId: result.account.avatarId, avatarUrl: result.account.avatarUrl });
+      document.querySelectorAll('[data-profile-avatar]').forEach(element => { element.innerHTML = profilePortrait(authService.state.account); });
+      dialog.close();
+    } catch (error) { dialog.querySelector('.avatar-error').textContent = error.message; }
+    finally { submit.disabled = false; }
+  });
+  dialog.showModal();
+  if (account.avatarId === 'custom' && account.avatarUrl) previewCustom().catch(() => {});
+}
 
 const actions = content => `<div class="management-actions">${content}</div>`;
 const message = () => '<p id="management-message" role="status" aria-live="polite"></p>';
@@ -29,10 +110,14 @@ export function restoreEditorPosition() {
   window.scrollTo({ top: returnPosition.top, behavior: 'instant' });
   returnPosition = null;
 }
-export function profilePage() {
+export function profilePage(publicView = false) {
   const account = authService.state.account;
   if (!account) return `${pageHeader('YOUR ACCOUNT', 'Sign in to continue.', 'Your profile is available after signing in.')}<section class="container page-section">${button('Sign in →', '#/account')}</section>`;
-  return `${pageHeader('YOUR ACCOUNT', 'Your adventure starts here.', 'Account details and tools for your journey.')}<section class="container page-section profile-grid"><div class="panel"><div class="profile-avatar" aria-hidden="true">${e(account.username.charAt(0).toUpperCase())}</div><h2>${e(account.username)}</h2><p>${account.role === 'admin' ? 'Administrator' : 'Adventurer'}</p><dl class="details-list"><div><dt>Email</dt><dd>${e(account.email || 'Not provided')}</dd></div><div><dt>Joined</dt><dd>${dateLabel(account.createdAt)}</dd></div><div><dt>Account type</dt><dd>Local test account</dd></div></dl>${actions('<button class="button button--outline" data-sign-out>Sign out</button>')}<p id="form-message" role="status"></p></div><div class="management-stack"><div class="panel"><p class="eyebrow">YOUR CHARACTERS</p><h2>Your next chapter awaits.</h2><p>Game characters and progress will appear here when the realm integration is connected.</p></div>${account.role === 'admin' ? `<div class="panel"><p class="eyebrow">ADMINISTRATION</p><h2>The realm journal</h2><p>Create updates, manage articles, and organize news categories.</p>${actions(button('Manage news →', '#/admin') + button('Categories', '#/admin/categories', 'outline') + button('Realm information', '#/admin/realm', 'outline'))}</div>` : ''}</div></section>`;
+  const role = account.role === 'admin' ? 'Administrator' : 'Adventurer';
+  const joined = dateLabel(account.createdAt);
+  const characters = `<section class="panel profile-characters" aria-labelledby="characters-title"><div class="panel-heading"><div><p class="eyebrow">YOUR CHARACTERS</p><h2 id="characters-title">The story is still unwritten.</h2></div><span class="badge">NOT CONNECTED</span></div><div class="profile-empty"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 5 39 12v12c0 9-15 19-15 19S9 33 9 24V12L24 5Z" stroke="currentColor" stroke-width="1.5"/><path d="M24 15v17m-7-10h14" stroke="currentColor" stroke-width="1.5"/></svg><h3>A place for your next adventure.</h3><p>Characters, guilds, and progress will appear here once the realm is connected.</p><span class="content-note">No game server is connected yet.</span></div></section>`;
+  const administration = account.role === 'admin' && !publicView ? `<section class="panel"><p class="eyebrow">ADMINISTRATION</p><h2>Behind the realm.</h2><p>Keep your community informed and your realm information up to date.</p>${actions(button('Manage news →', '#/admin') + button('Categories', '#/admin/categories', 'outline') + button('Realm information', '#/admin/realm', 'outline'))}</section>` : '';
+  return `<div class="profile-page"><section class="page-heading profile-cover">${backgroundMedia()}<div class="container"><p class="eyebrow">AETHERA COMMUNITY</p><p class="profile-cover-caption">Every legend begins with a name.</p></div></section><section class="container profile-content"><header class="panel profile-identity">${publicView ? `<div class="profile-avatar" data-profile-avatar>${profilePortrait(account)}</div>` : `<button type="button" class="profile-avatar profile-avatar--editable" data-edit-avatar aria-label="Change profile portrait"><span data-profile-avatar>${profilePortrait(account)}</span><span class="profile-avatar-edit" aria-hidden="true">Edit</span></button>`}<div class="profile-identity-copy"><div class="profile-role"><span class="status-dot" aria-hidden="true"></span>${e(role)}</div><h1>${e(account.username)}</h1><p>Member since ${joined}</p></div><div class="profile-identity-action">${button(publicView ? '← My profile' : 'Preview public profile ↗', publicView ? '#/profile' : '#/profile?view=public', 'outline')}</div></header>${publicView ? notice('Public profile preview · Only you can access this preview. Email and account tools are hidden.') : ''}<div class="profile-grid"><aside class="management-stack"><section class="panel"><p class="eyebrow">ABOUT THE PLAYER</p><h2>A new story awaits.</h2><p class="profile-about-empty">No introduction added yet.</p><dl class="details-list"><div><dt>Community role</dt><dd>${e(role)}</dd></div><div><dt>Joined</dt><dd>${joined}</dd></div></dl></section>${publicView ? '' : `<section class="panel profile-private"><div class="panel-heading"><h2>Account details</h2><span class="badge">ONLY YOU</span></div><dl class="details-list"><div><dt>Email</dt><dd>${e(account.email || 'Not provided')}</dd></div><div><dt>Account type</dt><dd>Local test account</dd></div></dl><p class="content-note">Website account only. Game account integration will be added later.</p><p id="form-message" role="status"></p></section>`}</aside><div class="management-stack">${characters}${administration}</div></div></section></div>`;
 }
 export async function managementPage(path, params) {
   await authService.refresh();
@@ -75,6 +160,7 @@ export function confirmAction(title, description) {
   });
 }
 export async function managementClick(event, render) {
+  if (event.target.closest('[data-edit-avatar]')) { chooseAvatar(); return true; }
   const target = event.target.closest('[data-delete-article], [data-delete-category]');
   if (!target) return false;
   const article = target.dataset.deleteArticle;

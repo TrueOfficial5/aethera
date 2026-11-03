@@ -1,6 +1,12 @@
 export const config = Object.freeze({
   name: 'Aethera',
   backgroundVideo: './videos/aethera-background.mp4',
+  downloadVideo: './videos/aethera-running.mp4',
+  downloadFraming: Object.freeze([
+    { offset: 0, objectPosition: '50% 10%' },
+    { offset: .45, objectPosition: '59% 55%' },
+    { offset: 1, objectPosition: '66% 90%' },
+  ]),
   logo: './images/AETHERA-logga.png',
   realm: 'Everfall',
   expansion: 'Wrath of the Lich King',

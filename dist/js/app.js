@@ -1,7 +1,7 @@
 import { managementPage, managementClick, managementSubmit, profilePage, restoreEditorPosition } from './management.js';
 import { authService } from './auth-service.js';
 import { config } from './config.js';
-import { setupScrollEffects, setupNavigationGlow } from './motion.js';
+import { setupScrollEffects, setupNavigationGlow, playDownloadScene } from './motion.js';
 import { setupSections } from './sections.js';
 import { header, footer, table } from './components.js';
 import { dataService } from './data.js';
@@ -18,6 +18,15 @@ document.querySelector('.skip-link').addEventListener('click', event => {
 let rankingCategory = 'players';
 let routeVersion = 0;
 let pageAnimation;
+function closeAccountMenus() {
+  document.querySelectorAll('[data-account-toggle]').forEach(toggle => {
+    toggle.setAttribute('aria-expanded', 'false');
+    document.getElementById(toggle.getAttribute('aria-controls')).hidden = true;
+  });
+}
+document.addEventListener('click', event => {
+  if (!event.target.closest('[data-account-menu]')) closeAccountMenus();
+});
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) pageAnimation?.cancel(); });
 async function render(scroll = true) {
@@ -26,7 +35,7 @@ async function render(scroll = true) {
   const route = new URL(location.hash.slice(1) || '/', location.origin);
   const [page = '', ...segments] = route.pathname.replace(/^\//, '').split('/');
   const id = segments.join('/');
-  const routes = { '': home, news: () => id ? articlePage(id) : newsPage(route.searchParams), admin: () => managementPage(id, route.searchParams), profile: profilePage, server: serverPage, play: playPage, rankings: () => rankingsPage(rankingCategory), account: accountPage, rules: rulesPage };
+  const routes = { '': home, news: () => id ? articlePage(id) : newsPage(route.searchParams), admin: () => managementPage(id, route.searchParams), profile: () => profilePage(route.searchParams.get('view') === 'public'), server: serverPage, play: playPage, rankings: () => rankingsPage(rankingCategory), account: () => accountPage(route.searchParams.get('mode') === 'register' ? 'register' : 'login'), rules: rulesPage };
   let content, pageError;
   try { content = await (routes[page] || notFound)(); } catch (error) { content = '<section class="container page-section"><h1>Unable to load this page</h1><p id="page-error"></p><a class="button button--outline" href="#/account">Your account</a></section>'; pageError = error.message;}
   if (version !== routeVersion) return;
@@ -64,7 +73,26 @@ async function render(scroll = true) {
   setupSections(document.querySelector('#main'));
   restoreEditorPosition();
 }
+async function completeAccountFlow() {
+  const route = new URL(location.hash.slice(1) || '/', location.origin);
+  if (route.pathname === '/account' && route.searchParams.get('returnTo') === '#/play') {
+    location.hash = '#/play';
+    return;
+  }
+  await render(false);
+}
 app.addEventListener('click', async event => {
+  const accountToggle = event.target.closest('[data-account-toggle]');
+  if (accountToggle) {
+    const expanded = accountToggle.getAttribute('aria-expanded') === 'true';
+    closeAccountMenus();
+    accountToggle.setAttribute('aria-expanded', String(!expanded));
+    document.getElementById(accountToggle.getAttribute('aria-controls')).hidden = expanded;
+    return;
+  }
+  if (event.target.closest('[data-account-menu] a')) closeAccountMenus();
+  const download = event.target.closest('[data-client-download]');
+  if (download) { await playDownloadScene(document.querySelector('#main'), download); return; }
   const editorLink = event.target.closest('a[href^="#/admin/edit/"], a[href="#/admin/new"], a[href="#/admin/realm"]');
   if (editorLink && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
     const destination = new URL(editorLink.href);
@@ -85,8 +113,19 @@ app.addEventListener('click', async event => {
     retry.textContent = authService.state.authentication.available ? 'Connection restored' : 'Retry connection';
     return;
   }
-  if (event.target.closest('[data-sign-out]')) {
-    try { await authService.signOut(); await render(false); } catch (error) { document.querySelector('#form-message').textContent = error.message; }
+  const signOut = event.target.closest('[data-sign-out]');
+  if (signOut) {
+    signOut.disabled = true;
+    try {
+      await authService.signOut();
+      if (location.hash === '#/account') await render();
+      else location.hash = '#/account';
+    } catch (error) {
+      const message = document.querySelector('[data-account-error]');
+      message.hidden = false;
+      message.textContent = error.message;
+    }
+    finally { signOut.disabled = false; }
     return;
   }
   const menu = event.target.closest('.menu-toggle');
@@ -129,11 +168,17 @@ app.addEventListener('submit', async event => {
   try {
     await authService.signIn(Object.fromEntries(new FormData(form)), form.dataset.mode === 'register');
     form.reset();
-    await render(false);
+    await completeAccountFlow();
   } catch (error) { message.textContent = error.message; submit.disabled = false; }
 });
 
-document.addEventListener('keydown', event => { if (event.key === 'Escape') { const toggle = document.querySelector('.menu-toggle'); if (toggle?.getAttribute('aria-expanded') === 'true') { toggle.click(); toggle.focus(); } } });
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  const accountToggle = document.querySelector('[data-account-toggle][aria-expanded="true"]');
+  if (accountToggle) { closeAccountMenus(); accountToggle.focus(); return; }
+  const toggle = document.querySelector('.menu-toggle');
+  if (toggle?.getAttribute('aria-expanded') === 'true') { toggle.click(); toggle.focus(); }
+});
 window.addEventListener('hashchange', () => render());
 await authService.refresh();
 render(false);

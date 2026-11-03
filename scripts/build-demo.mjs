@@ -41,7 +41,7 @@ management = management.replaceAll('Local test account', 'Simulated demo account
 await writeFile(resolve(output, 'js/management.js'), management);
 let app = await readFile(resolve(output, 'js/app.js'), 'utf8');
 app = `import { resetDemo } from './demo-adapter.js';\n` + app;
-app = app.replace("app.addEventListener('click', async event => {", "app.addEventListener('click', async event => {\n  const demo = event.target.closest('[data-demo-account]');\n  if (demo) { await authService.signIn({ role: demo.dataset.demoAccount }); await render(false); return; }\n");
+app = app.replace("app.addEventListener('click', async event => {", "app.addEventListener('click', async event => {\n  const demo = event.target.closest('[data-demo-account]');\n  if (demo) { await authService.signIn({ role: demo.dataset.demoAccount }); await completeAccountFlow(); return; }\n");
 app += `\ndocument.querySelector('[data-demo-reset]').addEventListener('click', resetDemo);\n`;
 await writeFile(resolve(output, 'js/app.js'), app);
 const index = await readFile(resolve(output, 'index.html'), 'utf8');

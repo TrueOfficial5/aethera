@@ -5,6 +5,7 @@ import { dirname } from 'node:path';
 import { seedNews } from './seed.mjs';
 import { HttpError, requireValue } from './validation.mjs';
 import { config } from '../dist/js/config.js';
+import { avatars, customPortraitUrl } from '../dist/js/avatars.js';
 
 export function openDatabase(path, { seed = true } = {}) {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
@@ -43,6 +44,8 @@ export function openDatabase(path, { seed = true } = {}) {
     CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires_at);
   `);
   if (!db.prepare('PRAGMA table_info(articles)').all().some(column => column.name === 'scheduled_at')) db.exec('ALTER TABLE articles ADD COLUMN scheduled_at TEXT');
+  if (!db.prepare('PRAGMA table_info(accounts)').all().some(column => column.name === 'avatar_id')) db.exec('ALTER TABLE accounts ADD COLUMN avatar_id TEXT');
+  if (!db.prepare('PRAGMA table_info(accounts)').all().some(column => column.name === 'avatar_url')) db.exec('ALTER TABLE accounts ADD COLUMN avatar_url TEXT');
   db.exec('CREATE INDEX IF NOT EXISTS articles_schedule ON articles(scheduled_at)');
   const store = new Store(db);
   store.publishDue();
@@ -63,7 +66,7 @@ export function openDatabase(path, { seed = true } = {}) {
 
 const articleSelect = `SELECT a.*, c.name AS category_name, u.username AS current_author_name
   FROM articles a LEFT JOIN categories c ON c.id=a.category_id LEFT JOIN accounts u ON u.id=a.author_id`;
-const publicAccount = row => row ? { id: row.id, username: row.username, email: row.email, role: row.role, provider: row.provider, createdAt: row.created_at } : null;
+const publicAccount = row => row ? { id: row.id, username: row.username, email: row.email, role: row.role, provider: row.provider, createdAt: row.created_at, avatarId: row.avatar_id || null, avatarUrl: row.avatar_url || null } : null;
 const publicArticle = row => row ? {
   id: row.id, title: row.title, content: row.content, imageUrl: row.image_url, imageAlt: row.image_alt,
   categoryId: row.category_id, categoryName: row.category_name || 'Uncategorized',
@@ -93,6 +96,13 @@ export class Store {
     return this.db.prepare("UPDATE articles SET status='published',published_at=scheduled_at,scheduled_at=NULL,updated_at=?,version=version+1 WHERE scheduled_at IS NOT NULL AND scheduled_at<=? AND status='draft'").run(now, now).changes;
   }
   account(id) { return publicAccount(this.db.prepare('SELECT * FROM accounts WHERE id=?').get(id)); }
+  updateAvatar(id, avatarId, customUrl) {
+    requireValue(avatars.some(avatar => avatar.id === avatarId), 'Choose one of the available portraits.');
+    const avatarUrl = avatarId === 'custom' ? customPortraitUrl(customUrl) : null;
+    requireValue(avatarId !== 'custom' || avatarUrl, 'Enter a direct HTTPS image URL without credentials.');
+    requireValue(this.db.prepare('UPDATE accounts SET avatar_id=?,avatar_url=? WHERE id=?').run(avatarId, avatarUrl, id).changes === 1, 'Account not found.', 404);
+    return this.account(id);
+  }
   identityAccount(provider, identity) {
     let row = this.db.prepare('SELECT * FROM accounts WHERE provider=? AND subject=?').get(provider, identity.subject);
     if (!row) {

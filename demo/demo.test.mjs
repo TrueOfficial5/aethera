@@ -8,6 +8,15 @@ test('Browser demo simulates roles and edits without a backend or real credentia
   const initial = await demoRequest('realm');
   const player = await demoRequest('auth/login', 'POST', { role: 'user' });
   assert.equal(player.authentication.mode, 'demo');
+  await demoRequest('profile/avatar', 'PUT', { avatarId: 'orc' });
+  await assert.rejects(demoRequest('profile/avatar', 'PUT', { avatarId: 'invalid' }), /available portraits/);
+  await demoRequest('auth/logout', 'POST');
+  await assert.rejects(demoRequest('profile/avatar', 'PUT', { avatarId: 'human' }), /simulated account/);
+  assert.equal((await demoRequest('auth/login', 'POST', { role: 'user' })).account.avatarId, 'orc');
+  await assert.rejects(demoRequest('profile/avatar', 'PUT', { avatarId: 'custom', avatarUrl: 'javascript:alert(1)' }), /HTTPS/);
+  await demoRequest('profile/avatar', 'PUT', { avatarId: 'custom', avatarUrl: 'https://example.com/portrait.png' });
+  await demoRequest('auth/logout', 'POST');
+  assert.equal((await demoRequest('auth/login', 'POST', { role: 'user' })).account.avatarUrl, 'https://example.com/portrait.png');
   await assert.rejects(demoRequest('admin/news'), /simulated administrator/);
   await demoRequest('auth/login', 'POST', { role: 'admin' });
   const category = (await demoRequest('admin/categories', 'POST', { name: 'Demo updates' })).category;

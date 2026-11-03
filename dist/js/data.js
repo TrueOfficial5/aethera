@@ -1,5 +1,10 @@
 import { api, newsService } from './news-service.js';
 import { config } from './config.js';
+const completedDownloadPreviews = new Set();
+export const playProgress = Object.freeze({
+  hasDownloadPreview: (accountId = 'guest') => completedDownloadPreviews.has(accountId),
+  completeDownloadPreview: (accountId = 'guest') => completedDownloadPreviews.add(accountId),
+});
 const players = [
   ['Vaelith', 'Paladin', 'Alliance', 'Dawnwatch', 2486],
   ['Thorn', 'Warrior', 'Horde', 'Ironbound', 2412],
